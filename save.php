@@ -18,6 +18,7 @@ if($formdata = $form->get_data())
   $user->idnumber = trim($formdata->idnumber);
   $user->department = trim($formdata->department);
   $user->profile_field_title = trim($formdata->profile_field_title);
+  $user->timemodified = time();
 
   profile_save_data($user);
   $DB->update_record('user', $user);

@@ -19,37 +19,38 @@ class block_spbstu_profile extends block_base {
     function get_content () {
       global $SESSION, $OUTPUT, $CFG, $USER, $DB, $COURSE, $PAGE;
 
-      $PAGE->requires->yui2_lib('autocomplete');
+      $user = $DB->get_record('user', array('id' => $USER->id));
+      $september1 = mktime(0, 0, 0, 9, 1, date("Y"));
+      $september1last = mktime(0, 0, 0, 9, 1, date("Y") - 1);
+      $now = time();
 
-      $form = new spbstu_profile_form($action = new moodle_url('/blocks/'.$this->name().'/save.php'));
-      $userid = $USER->id;
+      $timeok = ($now > $september1) ? 
+            $user->timemodified > $september1 :
+            $user->timemodified > $september1last;
 
-      if (!$user = $DB->get_record('user', array('id'=>$userid))) {
-        print_error('invaliduserid');
-      }
-      profile_load_data($user);
+      if (ajaxenabled()) {
+          $acjs = new moodle_url('/blocks/'.$this->name().'/autocomplete.js');
+          $acgphp = new moodle_url('/blocks/'.$this->name().'/ac/groups.php');
+          $accphp = new moodle_url('/blocks/'.$this->name().'/ac/categories.php');
+
+          $PAGE->requires->yui2_lib('autocomplete');
+          $PAGE->requires->js($acjs);
+          $PAGE->requires->js_function_call('autocomplete', array($acgphp->out(), 'id_idnumber', 'ac_idnumber'));
+          $PAGE->requires->js_function_call('autocomplete', array($accphp->out(), 'id_department', 'ac_department'));
+        }
       
       ob_start();
-// FIXME: profile_field_<shrotname> hardcoded 'title'
-      $profile_field_title = $DB->get_record('user_info_field', array('shortname' => 'title'));
-      if(trim($user->idnumber) && trim($user->department) && trim($user->profile_field_title))
-      {
-        include('info.html');
+//      profile_load_data($user);
+      if(!$timeok) {
+        $user->idnumber = '';
       }
-      else
+
+      if(!trim($user->idnumber))
       {
+        $form = new spbstu_profile_form($action = new moodle_url('/blocks/'.$this->name().'/save.php'));
         $form->set_data($user);
 
         $form->display();
-
-        if (ajaxenabled()) {
-            $acjs = new moodle_url('/blocks/'.$this->name().'/autocomplete.js');
-            $acgphp = new moodle_url('/blocks/'.$this->name().'/ac/groups.php');
-            $accphp = new moodle_url('/blocks/'.$this->name().'/ac/categories.php');
-            $PAGE->requires->js($acjs);
-            $PAGE->requires->js_function_call('autocomplete', array($acgphp->out(), 'id_idnumber', 'ac_idnumber'));
-            $PAGE->requires->js_function_call('autocomplete', array($accphp->out(), 'id_department', 'ac_department'));
-        }
       }
 
       $this->content->text = ob_get_contents();
@@ -57,5 +58,6 @@ class block_spbstu_profile extends block_base {
 
       return $this->content;
     }
+
 }
 ?>
