@@ -17,6 +17,7 @@ if($formdata = $form->get_data())
 {
   $user->idnumber = trim($formdata->idnumber);
   $user->department = trim($formdata->department);
+  $user->profile_field_middlename = trim($formdata->profile_field_middlename);
   $user->profile_field_title = trim($formdata->profile_field_title);
   $user->timemodified = time();
 
