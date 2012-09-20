@@ -64,6 +64,10 @@ class block_spbstu_profile extends block_base {
           $user->profile_field_middlename = trim($formdata->profile_field_middlename);
           $user->profile_field_title = trim($formdata->profile_field_title);
           $user->timemodified = time();
+
+          if(empty($user->idnumber) and !empty($user->profile_field_title)) {
+            $user->idnumber = $user->profile_field_title; // :D
+          }
               
           profile_save_data($user);
           $DB->update_record('user', $user);
