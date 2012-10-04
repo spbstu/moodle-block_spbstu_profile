@@ -61,6 +61,8 @@ class block_spbstu_profile extends block_base {
         {     
           $user->idnumber = trim($formdata->idnumber);
           $user->department = trim($formdata->department);
+          $user->firstname = trim($formdata->firstname);
+          $user->lastname = trim($formdata->lastname);
           $user->profile_field_middlename = trim($formdata->profile_field_middlename);
           $user->profile_field_title = trim($formdata->profile_field_title);
           $user->timemodified = time();
