@@ -73,6 +73,13 @@ class spbstu_profile_form extends moodleform {
            $errors['profile_field_title'] = get_string('profile_field_title_error', 'block_spbstu_profile');
         }
 
+        foreach(array('firstname','lastname','profile_field_middlename') as $f) {
+            if(preg_match('/[a-zA-Z]/', $data[$f]))
+            {
+                $errors[$f] = get_string('cyrillic_name_error', 'block_spbstu_profile');
+            }
+        }
+
         return $errors;
     }
 }
