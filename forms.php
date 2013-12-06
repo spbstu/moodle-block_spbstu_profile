@@ -16,10 +16,10 @@ class spbstu_profile_form extends moodleform {
         $mform->addElement('text', 'firstname', get_string('firstname'), 'maxlength="100" size="30"');
         $mform->addElement('text', 'lastname',  get_string('lastname'),  'maxlength="100" size="30"');
 
-        $mform->addRule('firstname', $strrequired, 'required', null, 'client');
+        $mform->addRule('firstname', '', 'required', null, 'client');
         $mform->setType('firstname', PARAM_NOTAGS);
 
-        $mform->addRule('lastname', $strrequired, 'required', null, 'client');
+        $mform->addRule('lastname', '', 'required', null, 'client');
         $mform->setType('lastname', PARAM_NOTAGS);
 
         if ($field = $DB->get_record('user_info_field', array('shortname' => 'middlename'))) {
@@ -34,9 +34,11 @@ class spbstu_profile_form extends moodleform {
         $mform->setType('department', PARAM_MULTILANG);
         $mform->addElement('html', '<div id="ac_department"></div>');
         $mform->addHelpButton('department', 'department', 'block_spbstu_profile');
+        $mform->addRule('department', get_string('required'), 'required', null, 'client');
 
         $role = $DB->get_record('role', array('shortname' => 'student'));
         $mform->addElement('header', 'student', $role->name);
+
         $mform->addElement('text', 'idnumber', get_string('idnumber'));
         $mform->setType('idnumber', PARAM_NOTAGS);
         //$mform->addRule('idnumber', '', 'optional', 'regex', '|^[0-9]+/[0-9]+$|', null, 'client');
@@ -63,19 +65,22 @@ class spbstu_profile_form extends moodleform {
     }
 
     public function validation($data) {
-        $errors = parent::validation($data);
+        // $errors = parent::validation($data);
+	    $errors = array();
 
-        if( !trim($data['profile_field_title'])
+        if(!trim($data['department'])
+            or strpos($data['department'], '/') === FALSE) {
+            $errors['department'] = get_string('department_help', 'block_spbstu_profile');
+        }
+        if(!trim($data['profile_field_title'])
             and preg_match('|[0-9]+[/][0-9]+|', $data['idnumber']) == 0
-          )
-        {
+          ) {
            $errors['idnumber'] = get_string('idnumber_error', 'block_spbstu_profile');
            $errors['profile_field_title'] = get_string('profile_field_title_error', 'block_spbstu_profile');
         }
 
         foreach(array('firstname','lastname','profile_field_middlename') as $f) {
-            if(preg_match('/[a-zA-Z]/', $data[$f]))
-            {
+            if(preg_match('/[a-zA-Z]/', $data[$f])) {
                 $errors[$f] = get_string('cyrillic_name_error', 'block_spbstu_profile');
             }
         }

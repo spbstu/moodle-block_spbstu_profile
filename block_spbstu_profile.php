@@ -20,6 +20,9 @@ class block_spbstu_profile extends block_base {
     function get_content () {
       global $SESSION, $OUTPUT, $CFG, $USER, $DB, $COURSE, $PAGE;
 
+      if($this->content) return $this->content;
+
+      $this->content = new stdClass;
       if(isguestuser()) {
         $this->content->text = '';
         return $this->content;
@@ -42,12 +45,12 @@ class block_spbstu_profile extends block_base {
       $timeok = ($now > $september1) ? 
             $user->timemodified > $september1 :
             $user->timemodified > $september1last;
-      
-      profile_load_data($user);
-      if(!$timeok) {
+
+      if(!$timeok and empty($user->profile['title'])) {
         $user->idnumber = '';
       }
 
+      profile_load_data($user);
       $form = new spbstu_profile_form(); //$action = new moodle_url('/blocks/'.$this->name().'/save.php'));
       $form->getElement('currentpicture')->setValue($imagevalue);
       $form->set_data($user);
@@ -57,22 +60,24 @@ class block_spbstu_profile extends block_base {
         $form->display();
       }
       else {
-        if($formdata = $form->get_data())
-        {     
-          $user->idnumber = trim($formdata->idnumber);
-          $user->department = trim($formdata->department);
-          $user->firstname = trim($formdata->firstname);
-          $user->lastname = trim($formdata->lastname);
-          $user->profile_field_middlename = trim($formdata->profile_field_middlename);
-          $user->profile_field_title = trim($formdata->profile_field_title);
+        if($formdata = $form->get_data()) {     
+          foreach(array('idnumber', 'department', 'firstname', 'lastname',
+                        'profile_field_middlename', 'profile_field_title') as $f) {
+            $user->{$f} = trim($formdata->{$f});
+          }
           $user->timemodified = time();
 
-          if(empty($user->idnumber) and !empty($user->profile_field_title)) {
-            $user->idnumber = $user->profile_field_title; // :D
-          }
-              
-          profile_save_data($user);
           $DB->update_record('user', $user);
+          profile_save_data($user);
+        }        
+
+        profile_load_custom_fields($user);
+        $tidn = $user->profile['title'].' '.$user->department;
+        if( (empty($user->idnumber) or $user->idnumber != $tidn) and !empty($user->profile['title']) ) {
+          $user->idnumber = $tidn;
+          $DB->update_record('user', $user);
+
+          $this->notify($user);
         }
       }
 
@@ -93,6 +98,25 @@ class block_spbstu_profile extends block_base {
       $this->page->requires->js_function_call('autocomplete', array($accphp->out(), 'id_department', 'ac_department')); 
     }
 
+    private function notify($user) {
+      global $CFG;
+      if($users = get_users_from_config($CFG->courserequestnotify, 'moodle/site:approvecourse')) {
+        foreach ($users as $u) {
+          $eventdata = new stdClass();
+          $eventdata->component         = 'moodle';
+          $eventdata->name              = 'instantmessage';
+          $eventdata->userfrom          = $user;
+          $eventdata->userto            = $u;
+          $eventdata->subject           = 'Новый преподаватель';
+          $eventdata->fullmessage       = 'Новый преподаватель: '.fullname($user).', '.$user->idnumber;
+          $eventdata->fullmessageformat = FORMAT_PLAIN;
+          $eventdata->fullmessagehtml   = '';
+          $eventdata->smallmessage      = '';
+          $eventdata->notification      = 1;
+          message_send($eventdata);
+        }
+      }
+    }
 
 public function applicable_formats() {
   return array(
