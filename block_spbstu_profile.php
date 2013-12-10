@@ -35,8 +35,14 @@ class block_spbstu_profile extends block_base {
       $hasuploadedpicture = ($fs->file_exists($context->id, 'user', 'icon', 0, '/', 'f2.png') or
                              $fs->file_exists($context->id, 'user', 'icon', 0, '/', 'f2.jpg'));
  
-      $imagevalue = $OUTPUT->user_picture($user, array('courseid' => SITEID, 'size'=>64));
+      $imagevalue = $OUTPUT->user_picture($user, array('size'=>100));
 //http://dl.spbstu.ru/user/editadvanced.php?id=3#moodle_picture
+
+if($USER->id == 6058) {
+if(!$hasuploadedpicture) {
+  echo $imagevalue;
+}
+}
 
       $september1 = mktime(0, 0, 0, 9, 1, date("Y"));
       $september1last = mktime(0, 0, 0, 9, 1, date("Y") - 1);
@@ -46,6 +52,7 @@ class block_spbstu_profile extends block_base {
             $user->timemodified > $september1 :
             $user->timemodified > $september1last;
 
+      profile_load_custom_fields($user);
       if(!$timeok and empty($user->profile['title'])) {
         $user->idnumber = '';
       }
@@ -71,9 +78,9 @@ class block_spbstu_profile extends block_base {
           profile_save_data($user);
         }        
 
-        profile_load_custom_fields($user);
         $tidn = $user->profile['title'].' '.$user->department;
         if( (empty($user->idnumber) or $user->idnumber != $tidn) and !empty($user->profile['title']) ) {
+
           $user->idnumber = $tidn;
           $DB->update_record('user', $user);
 
